@@ -5,6 +5,7 @@ import logo from '../../logo.svg';
 import { useLazyQuery } from 'react-apollo';
 import { LOGIN } from "../constantsGQL";
 import { AUTH_TOKEN, USER } from "../constants";
+import { simpleError } from "../common/SweetAlert";
 
 function Login(props) {
     const { register, handleSubmit, errors } = useForm();
@@ -14,6 +15,7 @@ function Login(props) {
         email: '',
         password: ''
     });
+    const [invalidUser, setInvalidUser] = useState(false);
 
     const handleInputChange = e => {
         const { name, value } = e.target;
@@ -35,8 +37,7 @@ function Login(props) {
 
     const isFormatCorrect = (email) => pattern.test(email);
 
-    if (data) {
-        console.log(data);
+    if (data && data.login.token) {
         sessionStorage.setItem(AUTH_TOKEN, data.login.token);
         const user = {
             completeName: data.login.completeName,
@@ -46,6 +47,10 @@ function Login(props) {
         props.history.push(`/`);
         window.location.reload();
     }
+
+    /*if (data && data.login.errors) {
+        simpleError(data.login.errors.message);
+    }*/
 
     return (
         <form onSubmit={handleSubmit(loginFormSubmit)}>
@@ -92,6 +97,9 @@ function Login(props) {
                     <div className="field">
                         <div className="control">
                             <button className="button" type="submit">Login</button>
+                            {
+                                data && data.login.errors && <p className="tag is-danger">Usuario inválido</p>
+                            }
                         </div>
                     </div>
                 </div>
