@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {ADD_POST, DELETE_POST, POSTS} from "../constantsGQL";
-import { useMutation, useQuery } from "@apollo/react-hooks";
+import { useMutation, useQuery, useLazyQuery } from "@apollo/react-hooks";
 import {simple, simpleError} from "../common/SweetAlert";
 
 function Wall(props) {
@@ -13,7 +13,7 @@ function Wall(props) {
     });
     const [postList, setPostList] = useState([]);
     const { loading, error, data } = useQuery(POSTS);
-    const [filteredList, setFilteredtList] = useState([]);
+    const [filterValue, setFilterValue] = useState('');
     const [deletePost] = useMutation(DELETE_POST, {
        refetchQueries: [{
            query: POSTS
@@ -26,18 +26,13 @@ function Wall(props) {
                 readAccess: data.readAccess
             }
         })
-    };
-    // const [readAccess, setReadAccess] = useState('');
-    const filterList = (readAccess) => {
-        console.log(readAccess)
-        setFilteredtList(filteredList.filter(post => post.readAccess === readAccess))
+            .then(() => e.target.reset())
+            .catch(() => simpleError('Ocurrió un error al crear la publicación'));
     };
 
     useEffect(() => {
         if (data) {
-            console.log(data.posts);
             setPostList(data.posts);
-            setFilteredtList(data.posts);
         }
     }, [data]);
 
@@ -81,17 +76,19 @@ function Wall(props) {
                     <div className="section is-left">
                         <button
                             className="button"
-                            onClick={() => {
-                                filterList('public')
-                            }}
+                            onClick={() => setFilterValue('')}
+                        >
+                            Todos
+                        </button>
+                        <button
+                            className="button"
+                            onClick={() => setFilterValue('public')}
                         >
                             Público
                         </button>
                         <button
                             className="button"
-                            onClick={() => {
-                                filterList('friends')
-                            }}
+                            onClick={() => setFilterValue('friends')}
                         >
                             Amigos
                         </button>
@@ -99,7 +96,15 @@ function Wall(props) {
                 </div>
             </div>
             {
-                filteredList.map((post, index) => {
+                postList
+                    .filter(post => {
+                        if (filterValue) {
+                            return post.readAccess === filterValue
+                        }
+
+                        return post
+                    })
+                    .map((post, index) => {
                     return (
                         <div className="columns" key={index}>
                             <div className="column">
