@@ -1,11 +1,125 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import {ADD_POST, DELETE_POST, POSTS} from "../constantsGQL";
+import { useMutation, useQuery } from "@apollo/react-hooks";
+import {simple, simpleError} from "../common/SweetAlert";
 
 function Wall(props) {
-    return (
-        <form>
+    const { register, handleSubmit, errors } = useForm();
+    const [createPost] = useMutation(ADD_POST, {
+        refetchQueries: [{
+            query: POSTS
+        }]
+    });
+    const [postList, setPostList] = useState([]);
+    const { loading, error, data } = useQuery(POSTS);
+    const [filteredList, setFilteredtList] = useState([]);
+    const [deletePost] = useMutation(DELETE_POST, {
+       refetchQueries: [{
+           query: POSTS
+       }]
+    });
+    const postFormSubmit = (data, e) => {
+        createPost({
+            variables: {
+                text: data.text,
+                readAccess: data.readAccess
+            }
+        })
+    };
+    // const [readAccess, setReadAccess] = useState('');
+    const filterList = (readAccess) => {
+        console.log(readAccess)
+        setFilteredtList(filteredList.filter(post => post.readAccess === readAccess))
+    };
 
-        </form>
+    useEffect(() => {
+        if (data) {
+            console.log(data.posts);
+            setPostList(data.posts);
+            setFilteredtList(data.posts);
+        }
+    }, [data]);
+
+    return (
+        <div>
+            <div className="columns">
+                <div className="column">
+                    <form className="box" onSubmit={handleSubmit(postFormSubmit)}>
+                        <div className="field">
+                            <div className="control">
+                            <textarea
+                                className="textarea"
+                                name="text"
+                                placeholder="¿Qué estas pensando?"
+                                ref={register({ required: true })}
+                            ></textarea>
+                                { errors.text && (<p className="tag is-warning">El texto es requerido</p>) }
+                            </div>
+                            <div className="select">
+                                <select
+                                    name="readAccess"
+                                    defaultValue="friends"
+                                    ref={register()}
+                                >
+                                    <option value="friends">Amigos</option>
+                                    <option value="public">Público</option>
+                                </select>
+                            </div>
+                            <button
+                                className="button"
+                                type="submit"
+                            >
+                                Publicar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div className="columns">
+                <div className="column">
+                    <div className="section is-left">
+                        <button
+                            className="button"
+                            onClick={() => {
+                                filterList('public')
+                            }}
+                        >
+                            Público
+                        </button>
+                        <button
+                            className="button"
+                            onClick={() => {
+                                filterList('friends')
+                            }}
+                        >
+                            Amigos
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {
+                filteredList.map((post, index) => {
+                    return (
+                        <div className="columns" key={index}>
+                            <div className="column">
+                                <div className="box">
+                                    <p>{ post.text }</p>
+                                    <a
+                                        className="is-link"
+                                        onClick={event => {
+                                            deletePost({ variables: { id: post._id } })
+                                                .then(() => simple('Publicación borrada exitosamente'))
+                                                .catch(() => simpleError('Ocurrió un error al borrar la publicación'))
+                                        }}
+                                    >Borrar</a>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })
+            }
+        </div>
     )
 }
 

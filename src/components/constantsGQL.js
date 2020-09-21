@@ -14,6 +14,35 @@ query($email: String!, $password: String!) {
 }
 `;
 
+const ADD_POST = gql`
+mutation($text: String!, $readAccess: String!) {
+    addPost(input: { text: $text, readAccess: $readAccess }) {
+        _id
+        text
+        readAccess
+    }
+}
+`;
+
+const DELETE_POST = gql`
+mutation($id: ID!) {
+    deletePost(id: $id)
+}
+`;
+
+const POSTS = gql`
+query($readAccess: String) {
+    posts(filters: { readAccess: $readAccess }) {
+        _id
+        text
+        readAccess
+    }
+}
+`;
+
 export {
-    LOGIN
+    LOGIN,
+    ADD_POST,
+    POSTS,
+    DELETE_POST
 }

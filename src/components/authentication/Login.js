@@ -15,7 +15,6 @@ function Login(props) {
         email: '',
         password: ''
     });
-    const [invalidUser, setInvalidUser] = useState(false);
 
     const handleInputChange = e => {
         const { name, value } = e.target;
