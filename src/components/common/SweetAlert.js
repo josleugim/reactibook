@@ -23,7 +23,22 @@ const simpleError = title => {
     })
 };
 
+const confirmation = () => {
+    const swal = withReactContent(Swal);
+    return swal.fire({
+        title: '¿Estás seguro de querer borrar la publicación?',
+        text: "La publicación se borrará permanentemente!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Si!',
+        cancelButtonText: 'No'
+    })
+};
+
 export {
     simple,
-    simpleError
+    simpleError,
+    confirmation
 }

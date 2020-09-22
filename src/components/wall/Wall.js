@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {ADD_POST, DELETE_POST, POSTS} from "../constantsGQL";
 import { useMutation, useQuery, useLazyQuery } from "@apollo/react-hooks";
-import {simple, simpleError} from "../common/SweetAlert";
+import { simple, simpleError, confirmation } from "../common/SweetAlert";
+import Swal from "sweetalert2";
 
 function Wall(props) {
     const { register, handleSubmit, errors } = useForm();
@@ -113,9 +114,15 @@ function Wall(props) {
                                     <a
                                         className="is-link"
                                         onClick={event => {
-                                            deletePost({ variables: { id: post._id } })
-                                                .then(() => simple('Publicación borrada exitosamente'))
-                                                .catch(() => simpleError('Ocurrió un error al borrar la publicación'))
+                                            confirmation()
+                                                .then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        deletePost({ variables: { id: post._id } })
+                                                            .then(() => simple('Publicación borrada exitosamente'))
+                                                            .catch(() => simpleError('Ocurrió un error al borrar la publicación'))
+                                                    }
+                                                })
+
                                         }}
                                     >Borrar</a>
                                 </div>
