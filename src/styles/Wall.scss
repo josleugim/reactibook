@@ -1,0 +1,12 @@
+.wall {
+  .post-text,
+  .btn-save,
+  .input-text,
+  .btn-edit {
+    display: none;
+  }
+
+  .active {
+    display: block;
+  }
+}

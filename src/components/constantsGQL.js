@@ -40,9 +40,20 @@ query($readAccess: String) {
 }
 `;
 
+const UPDATE_POST = gql`
+mutation($id: ID!, $text: String!, $readAccess: String!) {
+    updatePost(id: $id, input: { text: $text, readAccess: $readAccess }) {
+        _id
+        text
+        readAccess
+    }
+}
+`;
+
 export {
     LOGIN,
     ADD_POST,
     POSTS,
-    DELETE_POST
+    DELETE_POST,
+    UPDATE_POST
 }

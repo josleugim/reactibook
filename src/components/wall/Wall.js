@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import {ADD_POST, DELETE_POST, POSTS} from "../constantsGQL";
-import { useMutation, useQuery, useLazyQuery } from "@apollo/react-hooks";
+import { ADD_POST, DELETE_POST, POSTS, UPDATE_POST } from "../constantsGQL";
+import { useMutation, useQuery } from "@apollo/react-hooks";
 import { simple, simpleError, confirmation } from "../common/SweetAlert";
-import Swal from "sweetalert2";
+import '../../styles/Wall.scss';
 
 function Wall(props) {
     const { register, handleSubmit, errors } = useForm();
+    const [editPost, setEditPost] = useState({
+        editedText: '',
+        isActive: true
+    });
     const [createPost] = useMutation(ADD_POST, {
+        refetchQueries: [{
+            query: POSTS
+        }]
+    });
+    const [updatePost] = useMutation(UPDATE_POST, {
         refetchQueries: [{
             query: POSTS
         }]
@@ -31,14 +40,26 @@ function Wall(props) {
             .catch(() => simpleError('Ocurrió un error al crear la publicación'));
     };
 
+    const handleInputChange = e => {
+        const { name, value } = e.target;
+        setEditPost({...editPost, [name]: value})
+    };
+
     useEffect(() => {
         if (data) {
-            setPostList(data.posts);
+            setPostList(data.posts.map(post => {
+                return {
+                    _id: post._id,
+                    isActive: true,
+                    text: post.text,
+                    readAccess: post.readAccess
+                }
+            }));
         }
     }, [data]);
 
     return (
-        <div>
+        <div className="wall">
             <div className="columns">
                 <div className="column">
                     <form className="box" onSubmit={handleSubmit(postFormSubmit)}>
@@ -106,30 +127,64 @@ function Wall(props) {
                         return post
                     })
                     .map((post, index) => {
-                    return (
-                        <div className="columns" key={index}>
-                            <div className="column">
-                                <div className="box">
-                                    <p>{ post.text }</p>
-                                    <a
-                                        className="is-link"
-                                        onClick={event => {
-                                            confirmation()
-                                                .then((result) => {
-                                                    if (result.isConfirmed) {
-                                                        deletePost({ variables: { id: post._id } })
-                                                            .then(() => simple('Publicación borrada exitosamente'))
-                                                            .catch(() => simpleError('Ocurrió un error al borrar la publicación'))
+                        return (
+                            <div className="columns" key={index}>
+                                <div className="column">
+                                    <div className="box">
+                                        <p className={ post.isActive ? "is-text post-text active" : 'is-text post-text'}>
+                                            { post.text }
+                                        </p>
+                                        <textarea
+                                            className={ post.isActive ? 'input-text' : 'input-text active' }
+                                            name="editedText"
+                                            defaultValue={post.text}
+                                            onChange={handleInputChange}
+                                        />
+                                        <a
+                                            className="is-link"
+                                            onClick={event => {
+                                                confirmation()
+                                                    .then((result) => {
+                                                        if (result.isConfirmed) {
+                                                            deletePost({ variables: { id: post._id } })
+                                                                .then(() => simple('Publicación borrada exitosamente'))
+                                                                .catch(() => simpleError('Ocurrió un error al borrar la publicación'))
+                                                        }
+                                                    })
+                                            }}
+                                        >Borrar</a>
+                                        <button
+                                            className={post.isActive ? 'button btn-edit active' : 'button btn-edit'}
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                const currentState = post.isActive;
+                                                const updatedPostList = postList.map(item => item._id === post._id ? { ...item, isActive: !currentState } : item );
+                                                setPostList(updatedPostList);
+                                            }}
+                                        >Editar
+                                        </button>
+                                        <button
+                                            className={post.isActive ? 'button btn-save' : 'button btn-save active'}
+                                            type="button"
+                                            onClick={(e) => {
+                                                updatePost({
+                                                    variables: {
+                                                        id: post._id,
+                                                        readAccess: post.readAccess,
+                                                        text: editPost.editedText
                                                     }
                                                 })
-
-                                        }}
-                                    >Borrar</a>
+                                                    .then(() => simple('Publicación actualizada exitosamente'))
+                                                    .catch(() => simpleError('Ocurrió un error al actualizar la publicación'));
+                                            }}
+                                        >Guardar
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )
-                })
+                        )
+                    })
             }
         </div>
     )
