@@ -3,13 +3,16 @@ import { useForm } from 'react-hook-form';
 import { ADD_POST, DELETE_POST, POSTS, UPDATE_POST } from "../constantsGQL";
 import { useMutation, useQuery } from "@apollo/react-hooks";
 import { simple, simpleError, confirmation } from "../common/SweetAlert";
+import Dropzone from 'react-dropzone';
+import { UploadFile } from "../../helpers/Uploads";
 import '../../styles/Wall.scss';
 
 function Wall(props) {
     const { register, handleSubmit, errors } = useForm();
     const [editPost, setEditPost] = useState({
         editedText: '',
-        isActive: true
+        isActive: true,
+        imageId: ''
     });
     const [createPost] = useMutation(ADD_POST, {
         refetchQueries: [{
@@ -33,7 +36,8 @@ function Wall(props) {
         createPost({
             variables: {
                 text: data.text,
-                readAccess: data.readAccess
+                readAccess: data.readAccess,
+                imageId: editPost.imageId
             }
         })
             .then(() => e.target.reset())
@@ -52,7 +56,8 @@ function Wall(props) {
                     _id: post._id,
                     isActive: true,
                     text: post.text,
-                    readAccess: post.readAccess
+                    readAccess: post.readAccess,
+                    fullFile: post.fullFile
                 }
             }));
         }
@@ -65,31 +70,53 @@ function Wall(props) {
                     <form className="box" onSubmit={handleSubmit(postFormSubmit)}>
                         <div className="field">
                             <div className="control">
-                            <textarea
-                                className="textarea"
-                                name="text"
-                                placeholder="¿Qué estas pensando?"
-                                ref={register({ required: true })}
-                            ></textarea>
+                                <textarea
+                                    className="textarea"
+                                    name="text"
+                                    placeholder="¿Qué estas pensando?"
+                                    ref={register({ required: true })}
+                                ></textarea>
                                 { errors.text && (<p className="tag is-warning">El texto es requerido</p>) }
                             </div>
-                            <div className="select">
-                                <select
-                                    name="readAccess"
-                                    defaultValue="friends"
-                                    ref={register()}
-                                >
-                                    <option value="friends">Amigos</option>
-                                    <option value="public">Público</option>
-                                </select>
+                            <div className="control">
+                                <Dropzone onDrop={acceptedFiles => {
+                                    UploadFile(acceptedFiles, 'posts')
+                                        .then(imageId => {
+                                            setEditPost({ ...editPost, imageId: imageId });
+                                        })
+                                        .catch(() => simpleError('Ocurrió un error al publicar la imagen'));
+                                }}>
+                                    {({getRootProps, getInputProps}) => (
+                                        <section>
+                                            <div {...getRootProps()}>
+                                                <input {...getInputProps()} />
+                                                <p>Adjunta una imagen</p>
+                                            </div>
+                                        </section>
+                                    )}
+                                </Dropzone>
                             </div>
-                            <button
-                                className="button"
-                                type="submit"
-                            >
-                                Publicar
-                            </button>
                         </div>
+                        <div className="field">
+                            <div className="control">
+                                <div className="select">
+                                    <select
+                                        name="readAccess"
+                                        defaultValue="friends"
+                                        ref={register()}
+                                    >
+                                        <option value="friends">Amigos</option>
+                                        <option value="public">Público</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            className="button"
+                            type="submit"
+                        >
+                            Publicar
+                        </button>
                     </form>
                 </div>
             </div>
@@ -134,6 +161,12 @@ function Wall(props) {
                                         <p className={ post.isActive ? "is-text post-text active" : 'is-text post-text'}>
                                             { post.text }
                                         </p>
+                                        {
+                                            post.fullFile &&
+                                            <figure className="image is-3by1">
+                                                <img src={post.fullFile} alt="image" />
+                                            </figure>
+                                        }
                                         <textarea
                                             className={ post.isActive ? 'input-text' : 'input-text active' }
                                             name="editedText"

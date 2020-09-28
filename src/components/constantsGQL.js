@@ -15,11 +15,12 @@ query($email: String!, $password: String!) {
 `;
 
 const ADD_POST = gql`
-mutation($text: String!, $readAccess: String!) {
-    addPost(input: { text: $text, readAccess: $readAccess }) {
+mutation($text: String!, $readAccess: String!, $imageId: String) {
+    addPost(input: { text: $text, readAccess: $readAccess, imageId: $imageId }) {
         _id
         text
         readAccess
+        fullFile
     }
 }
 `;
@@ -36,6 +37,7 @@ query($readAccess: String) {
         _id
         text
         readAccess
+        fullFile
     }
 }
 `;
